@@ -1,0 +1,907 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamVault - Discover, Stream & Download Series</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                            accent: '#06b6d4'
+                        },
+                        darkbg: {
+                            base: '#090d16',
+                            card: '#111827',
+                            hover: '#1f2937',
+                            border: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #060911;
+            color: #f3f4f6;
+        }
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-effect:hover {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-600 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-darkbg-border px-4 lg:px-8 py-3 transition-all duration-200">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('browse')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-accent flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid font-bold fa-download text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-brand-500 bg-clip-text text-transparent">StreamVault</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 ml-1.5 rounded-full bg-brand-500/20 text-brand-accent border border-brand-500/30">v2.4</span>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-xl hidden md:block">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="handleSearch(event)" placeholder="Search TV series, anime, movies, genres..." class="w-full bg-darkbg-card text-sm text-slate-200 pl-10 pr-4 py-2.5 rounded-xl border border-darkbg-border focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition duration-150">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-darkbg-hover text-slate-400 px-2 py-0.5 rounded font-mono border border-darkbg-border">⌘K</span>
+                </div>
+            </div>
+
+            <!-- Header Right Menu -->
+            <div class="flex items-center space-x-3">
+                
+                <!-- Quick Download Drawer Toggle -->
+                <button onclick="toggleDownloadDrawer()" class="relative p-2.5 rounded-xl bg-darkbg-card hover:bg-darkbg-hover text-slate-300 hover:text-white border border-darkbg-border transition duration-200">
+                    <i class="fa-solid fa-arrow-down-long text-base"></i>
+                    <span id="activeDownloadBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-brand-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
+                </button>
+
+                <!-- Bookmarks Tab Button -->
+                <button onclick="switchView('bookmarks')" class="p-2.5 rounded-xl bg-darkbg-card hover:bg-darkbg-hover text-slate-300 hover:text-white border border-darkbg-border transition duration-200 flex items-center space-x-2">
+                    <i class="fa-solid fa-bookmark text-base text-amber-400"></i>
+                    <span class="hidden sm:inline text-xs font-medium">Watchlist</span>
+                </button>
+
+                <!-- User Profile Avatar -->
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 p-0.5 cursor-pointer">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-full h-full rounded-[10px] object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Search Row -->
+        <div class="mt-2 md:hidden">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" onkeyup="handleSearch(event)" placeholder="Search series or anime..." class="w-full bg-darkbg-card text-sm text-slate-200 pl-10 pr-4 py-2 rounded-xl border border-darkbg-border focus:outline-none focus:border-brand-500">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Layout Container -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 flex flex-col gap-6">
+
+        <!-- Navigation Tabs / Category Filters Bar -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-darkbg-border">
+            
+            <!-- Type Filters -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+                <button onclick="filterType('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white shadow-md shadow-brand-600/20 whitespace-nowrap">All Media</button>
+                <button onclick="filterType('tv')" id="filter-tv" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-darkbg-card hover:bg-darkbg-hover text-slate-300 border border-darkbg-border whitespace-nowrap">TV Shows</button>
+                <button onclick="filterType('anime')" id="filter-anime" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-darkbg-card hover:bg-darkbg-hover text-slate-300 border border-darkbg-border whitespace-nowrap">Anime</button>
+                <button onclick="filterType('trending')" id="filter-trending" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-darkbg-card hover:bg-darkbg-hover text-slate-300 border border-darkbg-border whitespace-nowrap flex items-center space-x-1.5">
+                    <i class="fa-solid fa-fire text-amber-500"></i>
+                    <span>Trending</span>
+                </button>
+            </div>
+
+            <!-- Genre Dropdown Selector -->
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                <label class="text-xs font-medium text-slate-400">Genre:</label>
+                <select id="genreSelect" onchange="applyGenreFilter(this.value)" class="bg-darkbg-card text-xs text-slate-200 border border-darkbg-border rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500">
+                    <option value="all">All Genres</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Action">Action</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="Cyberpunk">Cyberpunk</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Primary Content Area: BROWSE VIEW -->
+        <main id="browseView" class="space-y-8">
+
+            <!-- Hero Banner Feature -->
+            <div id="heroSection" class="relative rounded-3xl overflow-hidden border border-darkbg-border min-h-[320px] md:min-h-[380px] flex items-end p-6 md:p-10 shadow-2xl transition duration-300">
+                <div class="absolute inset-0 bg-cover bg-center transition-all duration-700 filter brightness-[0.6]" id="heroBg" style="background-image: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80');"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-darkbg-base via-darkbg-base/40 to-transparent"></div>
+                
+                <div class="relative z-10 max-w-2xl space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2.5 py-1 rounded-md bg-brand-600 text-white text-[10px] font-bold tracking-wider uppercase">Featured Release</span>
+                        <span class="px-2 py-0.5 rounded bg-black/60 text-emerald-400 text-xs font-mono border border-emerald-500/30">Complete Season 2 Available</span>
+                    </div>
+                    <h1 id="heroTitle" class="text-3xl md:text-5xl font-black text-white tracking-tight leading-none">Arcane: League of Legends</h1>
+                    <p id="heroDesc" class="text-sm text-slate-300 line-clamp-2 leading-relaxed">Set in the utopian region of Piltover and the oppressed underground of Zaun, the story follows the origins of two iconic League champions-and the power that will tear them apart.</p>
+                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                        <button id="heroPlayBtn" onclick="openSeriesModal(1)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-accent hover:from-brand-500 hover:to-cyan-400 text-white font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-brand-600/30 transition duration-200">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Watch / Download</span>
+                        </button>
+                        <button onclick="toggleBookmark(1)" class="px-4 py-3 rounded-xl bg-darkbg-card/80 hover:bg-darkbg-hover text-white text-sm font-medium border border-white/10 backdrop-blur-md transition duration-200 flex items-center space-x-2">
+                            <i class="fa-regular fa-bookmark"></i>
+                            <span>Save to Watchlist</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Series Grid Section -->
+            <section class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-clapperboard text-brand-500"></i>
+                        <span id="gridSectionTitle">Catalog Highlights</span>
+                    </h2>
+                    <span id="seriesCount" class="text-xs text-slate-400 font-mono">Showing 6 Series</span>
+                </div>
+
+                <!-- Grid Container -->
+                <div id="seriesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                    <!-- Dynamic Javascript Grid Items Will Be Rendered Here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Secondary Content Area: WATCHLIST / BOOKMARKS VIEW -->
+        <main id="bookmarksView" class="hidden space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-darkbg-border">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Your Saved Watchlist</h1>
+                    <p class="text-xs text-slate-400 mt-1">Series queued for quick access and download</p>
+                </div>
+                <button onclick="switchView('browse')" class="px-4 py-2 rounded-xl bg-darkbg-card hover:bg-darkbg-hover text-xs font-semibold text-slate-300 border border-darkbg-border">
+                    <i class="fa-solid fa-arrow-left mr-1.5"></i> Back to Catalog
+                </button>
+            </div>
+            <div id="bookmarksGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                <!-- Bookmarked Items Generated via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Active Download Drawer (Slide-out Overlay Container) -->
+    <div id="downloadDrawer" class="fixed inset-y-0 right-0 w-full sm:w-96 bg-darkbg-card/95 border-l border-darkbg-border backdrop-blur-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-darkbg-border flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-download text-brand-500"></i>
+                <h3 class="font-bold text-slate-100 text-sm">Download Manager</h3>
+            </div>
+            <button onclick="toggleDownloadDrawer()" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Download List Items Container -->
+        <div id="downloadList" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <!-- Dynamic Download Items Will Load Here -->
+        </div>
+
+        <!-- Download Manager Bottom Settings Footer -->
+        <div class="p-4 border-t border-darkbg-border bg-darkbg-base/50 space-y-3">
+            <div class="flex justify-between text-xs text-slate-400 font-mono">
+                <span>Total Active Speed:</span>
+                <span id="totalSpeedText" class="text-emerald-400 font-bold">0.0 MB/s</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="clearCompletedDownloads()" class="flex-1 py-2 rounded-lg bg-darkbg-hover hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">
+                    Clear Finished
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Episode Details & Stream Modal -->
+    <div id="seriesModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden overflow-y-auto">
+        <div class="bg-darkbg-card border border-darkbg-border w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl my-auto flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header / Poster Preview Banner -->
+            <div class="relative h-48 sm:h-64 bg-slate-900 overflow-hidden flex-shrink-0">
+                <img id="modalBannerImg" src="" alt="Series Cover" class="w-full h-full object-cover filter brightness-[0.5]">
+                <div class="absolute inset-0 bg-gradient-to-t from-darkbg-card via-transparent to-black/60"></div>
+                
+                <button onclick="closeSeriesModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-brand-600 transition duration-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+                <div class="absolute bottom-4 left-6 right-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                    <div>
+                        <div class="flex items-center space-x-2 text-xs text-brand-accent font-semibold mb-1">
+                            <span id="modalTypeBadge" class="uppercase"></span>
+                            <span>•</span>
+                            <span id="modalGenreText"></span>
+                        </div>
+                        <h2 id="modalTitle" class="text-2xl sm:text-3xl font-extrabold text-white"></h2>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span id="modalRating" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold font-mono"></span>
+                        <span id="modalYear" class="px-2.5 py-1 rounded-lg bg-white/10 text-slate-300 text-xs font-medium"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Content & Video Player Area -->
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+                
+                <!-- Video Stream Container -->
+                <div id="videoContainer" class="hidden relative bg-black rounded-2xl overflow-hidden aspect-video border border-darkbg-border group">
+                    <!-- HTML5 Video Component -->
+                    <video id="mainVideoPlayer" class="w-full h-full object-contain" poster="">
+                        <source id="videoSource" src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4">
+                        Your browser does not support HTML5 video.
+                    </video>
+
+                    <!-- Custom Player Controls Bar -->
+                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end gap-2">
+                        <!-- Progress Bar -->
+                        <input type="range" id="videoSeeker" min="0" max="100" value="0" oninput="seekVideo(this.value)" class="w-full h-1 bg-slate-700 accent-brand-500 rounded cursor-pointer">
+                        
+                        <div class="flex items-center justify-between text-xs text-white">
+                            <div class="flex items-center space-x-3">
+                                <button onclick="toggleVideoPlay()" class="hover:text-brand-accent text-sm">
+                                    <i id="playIcon" class="fa-solid fa-play"></i>
+                                </button>
+                                <span id="videoTime" class="font-mono text-[11px] text-slate-300">00:00 / 00:00</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <select onchange="changeVideoQuality(this.value)" class="bg-black/60 text-xs rounded border border-white/20 px-1 py-0.5 text-slate-200">
+                                    <option value="1080p">1080p HD</option>
+                                    <option value="720p">720p</option>
+                                    <option value="480p">480p</option>
+                                </select>
+                                <button onclick="toggleFullScreen()" class="hover:text-brand-accent">
+                                    <i class="fa-solid fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="modalDescription" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+
+                <!-- Seasons & Episodes Picker Section -->
+                <div class="space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-2 border-b border-darkbg-border">
+                        <h3 class="font-bold text-white text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-[#6366f1] fa-list"></i>
+                            <span>Episodes List</span>
+                        </h3>
+                        
+                        <div class="flex items-center space-x-3">
+                            <select id="seasonSelect" onchange="renderEpisodes(this.value)" class="bg-darkbg-card text-xs text-slate-200 border border-darkbg-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-500 font-semibold">
+                                <!-- Season Options Dynamic -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Episodes Dynamic Grid -->
+                    <div id="episodesList" class="space-y-2.5">
+                        <!-- Dynamic Episode Item Rendered Here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline Script App Logic -->
+    <script>
+        // Sample Mock Series Database
+        const seriesData = [
+            {
+                id: 1,
+                title: "Arcane: League of Legends",
+                type: "anime",
+                genre: "Cyberpunk",
+                rating: 9.0,
+                year: 2024,
+                poster: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
+                banner: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80",
+                trending: true,
+                description: "Amidst the conflict between twin cities of Piltover and Zaun, two sisters fight on opposing sides of a war between magic technologies and incompatible convictions.",
+                seasons: [
+                    {
+                        seasonNum: 1,
+                        episodes: [
+                            { id: 101, epNum: 1, title: "Welcome to the Playground", duration: "42 min", size: "1.2 GB" },
+                            { id: 102, epNum: 2, title: "Some Mysteries Are Better Left Unsolved", duration: "39 min", size: "1.1 GB" },
+                            { id: 103, epNum: 3, title: "The Base Violence Necessary for Change", duration: "44 min", size: "1.3 GB" }
+                        ]
+                    },
+                    {
+                        seasonNum: 2,
+                        episodes: [
+                            { id: 104, epNum: 1, title: "Heavy Is the Crown", duration: "48 min", size: "1.5 GB" },
+                            { id: 105, epNum: 2, title: "Watch It Burn", duration: "45 min", size: "1.4 GB" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "Cyberpunk: Edgerunners",
+                type: "anime",
+                genre: "Sci-Fi",
+                rating: 8.6,
+                year: 2022,
+                poster: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80",
+                banner: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop&q=80",
+                trending: true,
+                description: "A street kid trying to survive in a technology and body modification-obsessed city of the future. Having everything to lose, he chooses to stay alive by becoming an edgerunner.",
+                seasons: [
+                    {
+                        seasonNum: 1,
+                        episodes: [
+                            { id: 201, epNum: 1, title: "Episode 1: Let You Down", duration: "25 min", size: "650 MB" },
+                            { id: 202, epNum: 2, title: "Episode 2: Like a Jaguar", duration: "24 min", size: "620 MB" },
+                            { id: 203, epNum: 3, title: "Episode 3: Smooth Criminal", duration: "26 min", size: "680 MB" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "Stranger Things",
+                type: "tv",
+                genre: "Drama",
+                rating: 8.7,
+                year: 2023,
+                poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80",
+                banner: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=80",
+                trending: false,
+                description: "When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces and one strange little girl.",
+                seasons: [
+                    {
+                        seasonNum: 1,
+                        episodes: [
+                            { id: 301, epNum: 1, title: "Chapter One: The Vanishing of Will Byers", duration: "48 min", size: "1.4 GB" },
+                            { id: 302, epNum: 2, title: "Chapter Two: The Weirdo on Maple Street", duration: "55 min", size: "1.6 GB" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "Solo Leveling",
+                type: "anime",
+                genre: "Action",
+                rating: 8.5,
+                year: 2024,
+                poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
+                banner: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1200&auto=format&fit=crop&q=80",
+                trending: true,
+                description: "In a world where hunters with supernatural powers battle deadly monsters, a weak hunter named Sung Jinwoo is chosen by a mysterious quest program.",
+                seasons: [
+                    {
+                        seasonNum: 1,
+                        episodes: [
+                            { id: 401, epNum: 1, title: "I'm Used to It", duration: "24 min", size: "580 MB" },
+                            { id: 402, epNum: 2, title: "If I Had One More Chance", duration: "24 min", size: "600 MB" }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "The Witcher",
+                type: "tv",
+                genre: "Fantasy",
+                rating: 8.1,
+                year: 2023,
+                poster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+                banner: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80",
+                trending: false,
+                description: "Geralt of Rivia, a solitary monster hunter, struggles to find his place in a world where people often prove more wicked than beasts.",
+                seasons: [
+                    {
+                        seasonNum: 1,
+                        episodes: [
+                            { id: 501, epNum: 1, title: "The End's Beginning", duration: "61 min", size: "1.8 GB" },
+                            { id: 502, epNum: 2, title: "Four Marks", duration: "59 min", size: "1.7 GB" }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // State Management variables
+        let bookmarks = JSON.parse(localStorage.getItem('sv_bookmarks')) || [1, 2];
+        let downloads = [];
+        let currentFilterType = 'all';
+        let currentFilterGenre = 'all';
+        let currentSeriesModal = null;
+        let downloadTimer = null;
+
+        // Initialize App
+        window.onload = function() {
+            renderSeriesGrid(seriesData);
+            updateDownloadBadge();
+            startDownloadEngine();
+            
+            // Video player listener for seeker
+            const video = document.getElementById('mainVideoPlayer');
+            video.ontimeupdate = () => {
+                if(video.duration) {
+                    const pct = (video.currentTime / video.duration) * 100;
+                    document.getElementById('videoSeeker').value = pct;
+                    document.getElementById('videoTime').innerText = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+                }
+            };
+        };
+
+        // Render Series Grid
+        function renderSeriesGrid(items) {
+            const grid = document.getElementById('seriesGrid');
+            grid.innerHTML = '';
+
+            document.getElementById('seriesCount').innerText = `Showing ${items.length} Series`;
+
+            if(items.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-500">
+                        <i class="fa-solid fa-film text-4xl mb-3"></i>
+                        <p class="text-sm">No series found matching your criteria.</p>
+                    </div>`;
+                return;
+            }
+
+            items.forEach(series => {
+                const isBookmarked = bookmarks.includes(series.id);
+                const card = document.createElement('div');
+                card.className = "group relative bg-darkbg-card border border-darkbg-border rounded-2xl overflow-hidden hover:border-brand-500/50 transition duration-300 flex flex-col justify-between glow-effect cursor-pointer";
+                
+                card.innerHTML = `
+                    <div onclick="openSeriesModal(${series.id})" class="relative aspect-[2/3] overflow-hidden">
+                        <img src="${series.poster}" alt="${series.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkbg-card via-transparent to-transparent opacity-80"></div>
+                        
+                        <!-- Top Badges -->
+                        <div class="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-center">
+                            <span class="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[10px] font-bold text-slate-200 uppercase">${series.type}</span>
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/90 text-black text-[10px] font-extrabold flex items-center space-x-1">
+                                <i class="fa-solid fa-star text-[9px]"></i>
+                                <span>${series.rating}</span>
+                            </span>
+                        </div>
+
+                        <!-- Hover Overlay Quick Play Icon -->
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 bg-black/40">
+                            <div class="w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 flex flex-col flex-1 justify-between space-y-2">
+                        <div>
+                            <span class="text-[10px] font-semibold text-brand-accent uppercase tracking-wider">${series.genre}</span>
+                            <h3 onclick="openSeriesModal(${series.id})" class="text-sm font-bold text-slate-100 line-clamp-1 hover:text-brand-500 transition">${series.title}</h3>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 border-t border-darkbg-border/60">
+                            <span class="text-xs text-slate-400 font-mono">${series.year}</span>
+                            <button onclick="toggleBookmark(${series.id}); event.stopPropagation();" class="text-slate-400 hover:text-amber-400 transition p-1">
+                                <i class="${isBookmarked ? 'fa-solid text-amber-400' : 'fa-regular'} fa-bookmark text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Filter Logic Function
+        function filterType(type) {
+            currentFilterType = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-darkbg-card hover:bg-darkbg-hover text-slate-300 border border-darkbg-border whitespace-nowrap";
+            });
+            
+            const activeBtn = document.getElementById(`filter-${type}`);
+            if(activeBtn) {
+                activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white shadow-md shadow-brand-600/20 whitespace-nowrap";
+            }
+
+            applyCombinedFilters();
+        }
+
+        function applyGenreFilter(genre) {
+            currentFilterGenre = genre;
+            applyCombinedFilters();
+        }
+
+        function applyCombinedFilters() {
+            let filtered = seriesData;
+
+            if (currentFilterType === 'tv') filtered = filtered.filter(s => s.type === 'tv');
+            else if (currentFilterType === 'anime') filtered = filtered.filter(s => s.type === 'anime');
+            else if (currentFilterType === 'trending') filtered = filtered.filter(s => s.trending);
+
+            if (currentFilterGenre !== 'all') {
+                filtered = filtered.filter(s => s.genre.toLowerCase() === currentFilterGenre.toLowerCase());
+            }
+
+            renderSeriesGrid(filtered);
+        }
+
+        function handleSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const filtered = seriesData.filter(s => 
+                s.title.toLowerCase().includes(query) || 
+                s.genre.toLowerCase().includes(query) ||
+                s.type.toLowerCase().includes(query)
+            );
+            renderSeriesGrid(filtered);
+        }
+
+        // View Switching (Browse vs Bookmarks)
+        function switchView(viewName) {
+            if(viewName === 'bookmarks') {
+                document.getElementById('browseView').classList.add('hidden');
+                document.getElementById('bookmarksView').classList.remove('hidden');
+                renderBookmarks();
+            } else {
+                document.getElementById('bookmarksView').classList.add('hidden');
+                document.getElementById('browseView').classList.remove('hidden');
+            }
+        }
+
+        // Bookmark Toggle Logic
+        function toggleBookmark(id) {
+            if (bookmarks.includes(id)) {
+                bookmarks = bookmarks.filter(bId => bId !== id);
+            } else {
+                bookmarks.push(id);
+            }
+            localStorage.setItem('sv_bookmarks', JSON.stringify(bookmarks));
+            applyCombinedFilters();
+            if(!document.getElementById('bookmarksView').classList.contains('hidden')) {
+                renderBookmarks();
+            }
+        }
+
+        function renderBookmarks() {
+            const grid = document.getElementById('bookmarksGrid');
+            const bookmarkedSeries = seriesData.filter(s => bookmarks.includes(s.id));
+            grid.innerHTML = '';
+
+            if(bookmarkedSeries.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-16 text-center text-slate-500">
+                        <i class="fa-solid fa-bookmark text-4xl mb-3 text-slate-600"></i>
+                        <p class="text-sm">Your watchlist is currently empty.</p>
+                    </div>`;
+                return;
+            }
+
+            bookmarkedSeries.forEach(series => {
+                const card = document.createElement('div');
+                card.className = "group relative bg-darkbg-card border border-darkbg-border rounded-2xl overflow-hidden hover:border-brand-500/50 transition flex flex-col justify-between";
+                card.innerHTML = `
+                    <div onclick="openSeriesModal(${series.id})" class="relative aspect-[2/3] overflow-hidden cursor-pointer">
+                        <img src="${series.poster}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-3 flex justify-between items-center">
+                        <h4 class="text-xs font-bold text-white line-clamp-1">${series.title}</h4>
+                        <button onclick="toggleBookmark(${series.id})" class="text-amber-400 hover:text-slate-400">
+                            <i class="fa-solid fa-bookmark text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Series Details Modal Logic
+        function openSeriesModal(seriesId) {
+            const series = seriesData.find(s => s.id === seriesId);
+            if(!series) return;
+
+            currentSeriesModal = series;
+
+            document.getElementById('modalBannerImg').src = series.banner;
+            document.getElementById('modalTitle').innerText = series.title;
+            document.getElementById('modalTypeBadge').innerText = series.type;
+            document.getElementById('modalGenreText').innerText = series.genre;
+            document.getElementById('modalRating').innerText = `★ ${series.rating}`;
+            document.getElementById('modalYear').innerText = series.year;
+            document.getElementById('modalDescription').innerText = series.description;
+
+            // Populate Seasons Dropdown
+            const seasonSelect = document.getElementById('seasonSelect');
+            seasonSelect.innerHTML = '';
+            series.seasons.forEach(season => {
+                const opt = document.createElement('option');
+                opt.value = season.seasonNum;
+                opt.innerText = `Season ${season.seasonNum}`;
+                seasonSelect.appendChild(opt);
+            });
+
+            renderEpisodes(series.seasons[0].seasonNum);
+
+            // Hide stream player initially when opening modal
+            document.getElementById('videoContainer').classList.add('hidden');
+            const video = document.getElementById('mainVideoPlayer');
+            video.pause();
+
+            document.getElementById('seriesModal').classList.remove('hidden');
+        }
+
+        function closeSeriesModal() {
+            const video = document.getElementById('mainVideoPlayer');
+            video.pause();
+            document.getElementById('seriesModal').classList.add('hidden');
+        }
+
+        function renderEpisodes(seasonNum) {
+            if(!currentSeriesModal) return;
+            const season = currentSeriesModal.seasons.find(s => s.seasonNum == seasonNum);
+            const listContainer = document.getElementById('episodesList');
+            listContainer.innerHTML = '';
+
+            if(!season) return;
+
+            season.episodes.forEach(ep => {
+                const epRow = document.createElement('div');
+                epRow.className = "flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl bg-darkbg-base/60 hover:bg-darkbg-hover border border-darkbg-border gap-3 transition duration-150";
+                
+                epRow.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <button onclick="previewEpisode('${ep.title}')" class="w-9 h-9 rounded-lg bg-brand-600/20 text-brand-accent hover:bg-brand-600 hover:text-white flex items-center justify-center transition flex-shrink-0">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </button>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-100">E${ep.epNum}. ${ep.title}</h4>
+                            <div class="flex items-center space-x-2 text-[10px] text-slate-400 font-mono mt-0.5">
+                                <span><i class="fa-regular fa-clock mr-1"></i>${ep.duration}</span>
+                                <span>•</span>
+                                <span>${ep.size}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quality Download Buttons -->
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <span class="text-[10px] font-semibold text-slate-500 uppercase mr-1">Download:</span>
+                        <button onclick="triggerDownload('${currentSeriesModal.title}', ${season.seasonNum}, ${ep.epNum}, '720p')" class="px-2.5 py-1 rounded bg-darkbg-card hover:bg-brand-600 text-[11px] font-mono text-slate-300 hover:text-white border border-darkbg-border transition">720p</button>
+                        <button onclick="triggerDownload('${currentSeriesModal.title}', ${season.seasonNum}, ${ep.epNum}, '1080p')" class="px-2.5 py-1 rounded bg-brand-600/20 hover:bg-brand-600 text-[11px] font-mono text-brand-accent hover:text-white border border-brand-500/30 transition font-bold">1080p</button>
+                        <button onclick="triggerDownload('${currentSeriesModal.title}', ${season.seasonNum}, ${ep.epNum}, '4K')" class="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500 text-[11px] font-mono text-amber-400 hover:text-black border border-amber-500/30 transition font-bold">4K</button>
+                    </div>
+                `;
+                listContainer.appendChild(epRow);
+            });
+        }
+
+        // Stream Video Player Trigger
+        function previewEpisode(title) {
+            const container = document.getElementById('videoContainer');
+            const video = document.getElementById('mainVideoPlayer');
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+            video.play();
+            document.getElementById('playIcon').className = "fa-solid fa-pause";
+        }
+
+        function toggleVideoPlay() {
+            const video = document.getElementById('mainVideoPlayer');
+            const icon = document.getElementById('playIcon');
+            if(video.paused) {
+                video.play();
+                icon.className = "fa-solid fa-pause";
+            } else {
+                video.pause();
+                icon.className = "fa-solid fa-play";
+            }
+        }
+
+        function seekVideo(val) {
+            const video = document.getElementById('mainVideoPlayer');
+            if(video.duration) {
+                video.currentTime = (val / 100) * video.duration;
+            }
+        }
+
+        function changeVideoQuality(quality) {
+            // Simulated Quality Swapping
+            console.log(`Video quality updated to ${quality}`);
+        }
+
+        function toggleFullScreen() {
+            const video = document.getElementById('mainVideoPlayer');
+            if (video.requestFullscreen) video.requestFullscreen();
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Active Download Queue Manager Engine
+        function triggerDownload(seriesTitle, season, ep, quality) {
+            const downloadId = Date.now();
+            const fileName = `${seriesTitle.replace(/[^a-zA-Z0-9]/g, '_')}_S${season}E${ep}_${quality}.mkv`;
+            
+            const newDownload = {
+                id: downloadId,
+                name: fileName,
+                progress: 0,
+                speed: (Math.random() * 4 + 2).toFixed(1), // MB/s
+                status: 'downloading', // downloading, paused, completed
+                size: quality === '4K' ? '3.5 GB' : quality === '1080p' ? '1.4 GB' : '700 MB'
+            };
+
+            downloads.push(newDownload);
+            updateDownloadBadge();
+            renderDownloadsList();
+            toggleDownloadDrawer(true);
+        }
+
+        function renderDownloadsList() {
+            const list = document.getElementById('downloadList');
+            list.innerHTML = '';
+
+            if (downloads.length === 0) {
+                list.innerHTML = `
+                    <div class="py-12 text-center text-slate-500">
+                        <i class="fa-solid fa-cloud-arrow-down text-3xl mb-2"></i>
+                        <p class="text-xs">No active downloads in queue.</p>
+                    </div>`;
+                return;
+            }
+
+            downloads.forEach(dl => {
+                const item = document.createElement('div');
+                item.className = "p-3 rounded-xl bg-darkbg-base border border-darkbg-border space-y-2";
+                
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="overflow-hidden">
+                            <h5 class="text-xs font-bold text-slate-200 truncate">${dl.name}</h5>
+                            <span class="text-[10px] text-slate-400 font-mono">${dl.size} • ${dl.status === 'completed' ? 'Finished' : dl.speed + ' MB/s'}</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            ${dl.status !== 'completed' ? `
+                                <button onclick="togglePauseDownload(${dl.id})" class="p-1 text-slate-400 hover:text-white text-xs">
+                                    <i class="fa-solid ${dl.status === 'paused' ? 'fa-play text-emerald-400' : 'fa-pause'}"></i>
+                                </button>
+                            ` : ''}
+                            <button onclick="cancelDownload(${dl.id})" class="p-1 text-slate-400 hover:text-rose-400 text-xs">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full h-1.5 bg-darkbg-hover rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-brand-600 to-brand-accent transition-all duration-300" style="width: ${dl.progress}%"></div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function togglePauseDownload(id) {
+            const dl = downloads.find(d => d.id === id);
+            if(dl) {
+                dl.status = dl.status === 'downloading' ? 'paused' : 'downloading';
+                renderDownloadsList();
+            }
+        }
+
+        function cancelDownload(id) {
+            downloads = downloads.filter(d => d.id !== id);
+            updateDownloadBadge();
+            renderDownloadsList();
+        }
+
+        function clearCompletedDownloads() {
+            downloads = downloads.filter(d => d.status !== 'completed');
+            updateDownloadBadge();
+            renderDownloadsList();
+        }
+
+        function updateDownloadBadge() {
+            const activeCount = downloads.filter(d => d.status === 'downloading').length;
+            const badge = document.getElementById('activeDownloadBadge');
+            if(activeCount > 0) {
+                badge.innerText = activeCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function startDownloadEngine() {
+            setInterval(() => {
+                let totalSpeed = 0;
+                downloads.forEach(dl => {
+                    if (dl.status === 'downloading') {
+                        dl.progress += Math.floor(Math.random() * 8 + 3);
+                        totalSpeed += parseFloat(dl.speed);
+                        if(dl.progress >= 100) {
+                            dl.progress = 100;
+                            dl.status = 'completed';
+                            updateDownloadBadge();
+                        }
+                    }
+                });
+                document.getElementById('totalSpeedText').innerText = `${totalSpeed.toFixed(1)} MB/s`;
+                if(downloads.some(d => d.status === 'downloading')) {
+                    renderDownloadsList();
+                }
+            }, 1000);
+        }
+
+        function toggleDownloadDrawer(forceOpen = false) {
+            const drawer = document.getElementById('downloadDrawer');
+            if(forceOpen || drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.add('translate-x-full');
+            }
+        }
+    </script>
+</body>
+</html>
+```
