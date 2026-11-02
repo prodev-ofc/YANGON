@@ -1,2 +1,0 @@
-neonize
-python-dotenv
